@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+from urllib.parse import urlparse
 from app.extensions import db
-from app.models.user import User
+from app.models.user import User, Role
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -46,7 +47,7 @@ class RegistrationForm(FlaskForm):
     )
     role = SelectField(
         "Role",
-        choices=[("Citizen", "Citizen"), ("Staff", "Collection Staff")],
+        choices=[("Citizen", "Citizen")],
         default="Citizen",
         validators=[DataRequired()],
     )
@@ -98,6 +99,20 @@ class ChangePasswordForm(FlaskForm):
     submit = SubmitField("Change Password")
 
 
+def _is_safe_redirect_url(target):
+    """Return True only for safe, local application destinations.
+
+    Rejects absolute URLs (http://, https://) and protocol-relative URLs
+    (//example.com) by requiring an empty scheme and netloc.
+    """
+    if not target:
+        return False
+    parsed = urlparse(target)
+    if parsed.scheme or parsed.netloc:
+        return False
+    return target.startswith("/")
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -117,13 +132,13 @@ def login():
         login_user(user)
         flash(f"Welcome back, {user.full_name}.", "success")
         next_page = request.args.get("next")
-        if not next_page or not next_page.startswith("/"):
+        if not _is_safe_redirect_url(next_page):
             next_page = url_for("main.index")
         return redirect(next_page)
     return render_template("auth/login.html", form=form)
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
@@ -140,7 +155,7 @@ def register():
         user = User(
             full_name=form.full_name.data.strip(),
             email=form.email.data.strip().lower(),
-            role=form.role.data,
+            role=Role.CITIZEN,
             phone=form.phone.data.strip() if form.phone.data else None,
         )
         user.set_password(form.password.data)

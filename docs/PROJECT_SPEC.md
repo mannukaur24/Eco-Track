@@ -16,7 +16,7 @@ EcoTrack is a centralized, role-based web platform that organizes the reporting 
 The system is an academic prototype. It is not represented as a live municipal service or deployed production system, and it does not integrate with actual municipal authorities or waste collection services.
 
 ### Scope (in scope for initial release)
-- User registration, login, logout and profile management (Citizen, Collection Staff; Administrator accounts provisioned securely).
+- User registration, login, logout and profile management (Citizen only via public registration; Collection Staff and Administrator accounts provisioned securely by an administrator).
 - Citizen waste reporting with category, description, location and photograph upload (max 5 MB, validated file types).
 - Unique report reference and submission acknowledgement.
 - Administrator review: verify, reject (with reason), or update report status.

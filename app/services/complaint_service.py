@@ -3,8 +3,10 @@
 import uuid
 from app.extensions import db
 from app.models.report import Report
+from app.models.report_status_history import ReportStatusHistory
 from app.models.location import Location
 from app.models.waste_category import WasteCategory
+from app.models.user import ReportStatus
 from app.utils.uploads import save_uploaded_file
 
 
@@ -81,8 +83,36 @@ class ComplaintService:
             reference=reference,
         )
         db.session.add(report)
+        db.session.flush()  # ensure report.id is generated before recording history
+
+        # Record complaint submission in the status history.
+        ComplaintService.record_status_history(
+            report,
+            previous_status=None,
+            new_status=ReportStatus.PENDING,
+            updated_by=user.id,
+            remarks="Complaint submitted by citizen.",
+        )
+
         db.session.commit()
         return report
+
+    @staticmethod
+    def record_status_history(report, previous_status, new_status, updated_by, remarks=None):
+        """Record a complaint status change in the audit history.
+
+        Added to the current session; the caller is responsible for
+        committing the transaction so history and status changes stay atomic.
+        """
+        history = ReportStatusHistory(
+            report_id=report.id,
+            previous_status=previous_status,
+            new_status=new_status,
+            updated_by=updated_by,
+            remarks=remarks or "",
+        )
+        db.session.add(history)
+        return history
 
     @staticmethod
     def get_user_reports(user, status_filter=None, search=None):

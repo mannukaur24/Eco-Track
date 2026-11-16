@@ -96,15 +96,23 @@ def run_migrations_online():
 
     connectable = get_engine()
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=get_metadata(),
-            **conf_args
-        )
+    try:
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection,
+                target_metadata=get_metadata(),
+                **conf_args
+            )
 
-        with context.begin_transaction():
-            context.run_migrations()
+            with context.begin_transaction():
+                context.run_migrations()
+    except Exception as exc:  # pragma: no cover - runtime environment check
+        raise RuntimeError(
+            "EcoTrack could not connect to the MySQL database during migration.\n"
+            "Make sure MySQL 8 is running and your .env file contains correct "
+            "DB_HOST, DB_PORT, DB_USER, DB_PASSWORD and DB_NAME values.\n"
+            "Original error: %s" % exc
+        ) from exc
 
 
 if context.is_offline_mode():

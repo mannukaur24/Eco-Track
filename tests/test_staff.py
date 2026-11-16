@@ -1,6 +1,7 @@
 """Collection Staff portal tests."""
 
 import pytest
+from datetime import datetime
 from app import create_app
 from app.extensions import db
 from app.models.user import User, Role, ReportStatus, TaskStatus
@@ -66,7 +67,7 @@ def _make_admin(app, client, email="admin@example.com", full_name="Admin User"):
             admin.set_password("AdminPass123")
             db.session.add(admin)
             db.session.commit()
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, email, "AdminPass123")
     return admin
 
@@ -87,7 +88,7 @@ def _make_staff(app, client, email="staff@example.com", full_name="Staff Worker"
             from app.models.staff import Staff
             db.session.add(Staff(user_id=user.id, availability="Mon-Fri", service_area="Zone A"))
             db.session.commit()
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, email, "StaffPass123")
     return user
 
@@ -95,7 +96,7 @@ def _make_staff(app, client, email="staff@example.com", full_name="Staff Worker"
 def _make_verified_complaint(app, client, email="citizen@example.com", reference_override=None):
     """Create a citizen, submit a complaint, verify it as admin. Returns (citizen_user, report)."""
     # Register citizen
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _register(client, email, "Citizen User", role="Citizen")
     _login(client, email)
     client.post(
@@ -199,7 +200,7 @@ def test_staff_task_visibility_own_tasks_only(client, app):
         db.session.commit()
 
     # Login as staff_a
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, "staff_a@example.com", "Pass1234")
     response = client.get("/staff/tasks", follow_redirects=True)
     assert response.status_code == 200
@@ -247,7 +248,7 @@ def test_staff_cannot_access_other_staff_task(client, app):
         task_b_id = task_b.id
 
     # Login as staff_a and try to access staff_b's task
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, "staff_a2@example.com", "Pass1234")
     response = client.get(f"/staff/tasks/{task_b_id}", follow_redirects=True)
     assert response.status_code == 200
@@ -466,3 +467,42 @@ def test_staff_task_history(client, app):
     assert response.status_code == 200
     assert b"Task History" in response.data
     assert b"Started work" in response.data
+
+
+def test_staff_dashboard_with_due_dates(client, app):
+    _make_staff(app, client, email="staff_due@example.com", full_name="Staff Due")
+    staff_user = User.query.filter_by(email="staff_due@example.com").first()
+    with app.app_context():
+        admin = User.query.filter_by(email="admin@example.com").first()
+        if admin is None:
+            admin = User(full_name="Admin", email="admin@example.com", role=Role.ADMINISTRATOR)
+            admin.set_password("AdminPass123")
+            db.session.add(admin)
+            db.session.flush()
+        citizen = User(full_name="Citizen", email="citizen_due@example.com", role=Role.CITIZEN)
+        citizen.set_password("Pass1234")
+        db.session.add(citizen)
+        db.session.flush()
+        cat = WasteCategory.query.filter_by(category_name="Organic Waste").first()
+        report = Report(
+            user_id=citizen.id,
+            category_id=cat.id,
+            description="Garbage piled up for many days.",
+            reference="ET-DUE01",
+            status=ReportStatus.VERIFIED,
+        )
+        db.session.add(report)
+        db.session.flush()
+        task = CollectionTask(
+            report_id=report.id,
+            staff_id=staff_user.id,
+            assigned_by=admin.id,
+            due_date=datetime(2026, 12, 1),
+            task_status=TaskStatus.ASSIGNED,
+        )
+        db.session.add(task)
+        db.session.commit()
+    response = client.get("/staff/dashboard", follow_redirects=True)
+    assert response.status_code == 200
+    assert b"ET-DUE01" in response.data
+

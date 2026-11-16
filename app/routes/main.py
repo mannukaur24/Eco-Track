@@ -1,5 +1,10 @@
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, abort, send_from_directory
+from flask_login import login_required, current_user
 from sqlalchemy import text
+import os
+
+from app.models.report import Report
+from app.models.collection_task import CollectionTask
 
 main_bp = Blueprint("main", __name__)
 
@@ -17,10 +22,69 @@ def health():
         from app.extensions import db
         db.session.execute(text("SELECT 1"))
     except Exception as exc:  # pragma: no cover - health check
-        db_status = f"error: {exc}"
         current_app.logger.error("Database health check failed: %s", exc)
+        return {
+            "status": "fail",
+            "database": "unavailable",
+            "app": "EcoTrack",
+        }, 503
     return {
         "status": "ok",
         "database": db_status,
         "app": "EcoTrack",
     }, 200
+
+
+@main_bp.route("/uploads/<path:filename>")
+@login_required
+def serve_uploaded_image(filename):
+    """Serve a private complaint image only to authorized users.
+
+    Authorized to view a complaint's image:
+    - the citizen who owns the complaint,
+    - an administrator,
+    - the staff member assigned to the complaint's collection task.
+    """
+    if not filename or ".." in filename or filename.startswith("/") or "\\" in filename:
+        abort(404)
+
+    safe_name = os.path.basename(filename)
+    if safe_name != filename:
+        abort(404)
+
+    upload_folder = os.path.abspath(current_app.config["UPLOAD_FOLDER"])
+    dest_path = os.path.abspath(os.path.join(upload_folder, safe_name))
+    if not dest_path.startswith(upload_folder + os.sep):
+        abort(404)
+    if not os.path.isfile(dest_path):
+        abort(404)
+
+    image_path = "uploads/" + safe_name
+    report = Report.query.filter_by(image_path=image_path).first()
+    if report is None:
+        abort(404)
+
+    authorized = False
+    if current_user.is_admin():
+        authorized = True
+    elif current_user.is_citizen() and report.user_id == current_user.id:
+        authorized = True
+    elif current_user.is_staff():
+        assigned = CollectionTask.query.filter_by(
+            report_id=report.id, staff_id=current_user.id
+        ).first()
+        if assigned is not None:
+            authorized = True
+
+    if not authorized:
+        abort(403)
+
+    ext = safe_name.rsplit(".", 1)[-1].lower() if "." in safe_name else ""
+    mimetype = {
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "gif": "image/gif",
+        "webp": "image/webp",
+    }.get(ext, "application/octet-stream")
+    return send_from_directory(upload_folder, safe_name, mimetype=mimetype)

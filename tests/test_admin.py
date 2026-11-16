@@ -1,9 +1,10 @@
 """Administrator panel tests."""
 
 import pytest
+from datetime import datetime
 from app import create_app
 from app.extensions import db
-from app.models.user import User, Role, ReportStatus
+from app.models.user import User, Role, ReportStatus, TaskStatus
 from app.models.report import Report
 from app.models.waste_category import WasteCategory
 from app.models.collection_task import CollectionTask
@@ -69,7 +70,7 @@ def _make_admin(app, client, email="admin@example.com", full_name="Admin User"):
             admin.set_password("AdminPass123")
             db.session.add(admin)
             db.session.commit()
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, email, "AdminPass123")
     return admin
 
@@ -83,8 +84,20 @@ def test_admin_dashboard_requires_admin(client, app):
 
 
 def test_staff_cannot_access_admin(client, app):
-    _register(client, "staff@example.com", "Staff User", role="Staff")
-    _login(client, "staff@example.com")
+    # Staff accounts are provisioned by an administrator, not via public
+    # registration, so create the staff user directly with a Staff profile.
+    with app.app_context():
+        staff_user = User(
+            full_name="Staff User", email="staff@example.com", role=Role.STAFF
+        )
+        staff_user.set_password("Password123")
+        db.session.add(staff_user)
+        db.session.flush()
+        from app.models.staff import Staff
+
+        db.session.add(Staff(user_id=staff_user.id))
+        db.session.commit()
+    _login(client, "staff@example.com", "Password123")
     response = client.get("/admin/dashboard", follow_redirects=True)
     assert response.status_code == 403 or b"permission" in response.data.lower()
 
@@ -99,7 +112,7 @@ def test_admin_dashboard_access(client, app):
 def test_admin_dashboard_stats(client, app):
     _make_admin(app, client)
     # Create a complaint as citizen
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _register(client, "c@example.com", "Citizen C", role="Citizen")
     _login(client, "c@example.com")
     client.post(
@@ -114,7 +127,7 @@ def test_admin_dashboard_stats(client, app):
         follow_redirects=True,
     )
     # Log back in as admin
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, "admin@example.com")
     response = client.get("/admin/dashboard", follow_redirects=True)
     assert response.status_code == 200
@@ -129,7 +142,7 @@ def test_admin_view_complaints(client, app):
 def test_admin_verify_complaint(client, app):
     _make_admin(app, client)
     # Create complaint as citizen
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _register(client, "c@example.com", "Citizen C", role="Citizen")
     _login(client, "c@example.com")
     client.post(
@@ -148,7 +161,7 @@ def test_admin_verify_complaint(client, app):
         report = Report.query.filter_by(user_id=user.id).first()
         reference = report.reference
     # Login as admin and verify
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, "admin@example.com", "AdminPass123")
     response = client.post(
         f"/admin/complaints/{reference}/verify", follow_redirects=True
@@ -161,7 +174,7 @@ def test_admin_verify_complaint(client, app):
 
 def test_admin_reject_complaint_with_reason(client, app):
     _make_admin(app, client)
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _register(client, "c@example.com", "Citizen C", role="Citizen")
     _login(client, "c@example.com")
     client.post(
@@ -179,7 +192,7 @@ def test_admin_reject_complaint_with_reason(client, app):
         user = User.query.filter_by(email="c@example.com").first()
         report = Report.query.filter_by(user_id=user.id).first()
         reference = report.reference
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, "admin@example.com", "AdminPass123")
     # Reject without reason should fail
     response = client.post(
@@ -217,7 +230,7 @@ def test_admin_assign_task(client, app):
         staff_id = staff_user.id
 
     # Create verified complaint as citizen
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _register(client, "c@example.com", "Citizen C", role="Citizen")
     _login(client, "c@example.com")
     client.post(
@@ -239,7 +252,7 @@ def test_admin_assign_task(client, app):
         db.session.commit()
 
     # Login as admin and assign task
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _login(client, "admin@example.com", "AdminPass123")
     response = client.post(
         "/admin/tasks/assign",
@@ -282,6 +295,8 @@ def test_admin_add_staff(client, app):
         user = User.query.filter_by(email="newstaff@example.com").first()
         assert user is not None
         assert user.role == Role.STAFF
+        from app.models.staff import Staff
+        assert Staff.query.filter_by(user_id=user.id).first() is not None
 
 
 def test_admin_add_staff_duplicate_email(client, app):
@@ -397,3 +412,87 @@ def test_admin_awareness_management(client, app):
         )
         assert response.status_code == 200
         assert article.title == "Recycling Guide Updated"
+
+
+def test_admin_dashboard_with_due_dates(client, app):
+    _make_admin(app, client)
+    with app.app_context():
+        staff_user = User(
+            full_name="Staff Worker", email="staff_due@example.com", role=Role.STAFF
+        )
+        staff_user.set_password("Password123")
+        db.session.add(staff_user)
+        db.session.flush()
+        from app.models.staff import Staff
+
+        db.session.add(Staff(user_id=staff_user.id))
+        citizen = User(
+            full_name="Citizen", email="citizen_due@example.com", role=Role.CITIZEN
+        )
+        citizen.set_password("Pass1234")
+        db.session.add(citizen)
+        db.session.flush()
+        cat = WasteCategory.query.filter_by(category_name="Organic Waste").first()
+        report = Report(
+            user_id=citizen.id,
+            category_id=cat.id,
+            description="Due date complaint.",
+            reference="ET-DUE01",
+            status=ReportStatus.VERIFIED,
+        )
+        db.session.add(report)
+        db.session.flush()
+        task = CollectionTask(
+            report_id=report.id,
+            staff_id=staff_user.id,
+            assigned_by=User.query.filter_by(email="admin@example.com").first().id,
+            due_date=datetime(2026, 12, 1),
+            task_status=TaskStatus.ASSIGNED,
+        )
+        db.session.add(task)
+        db.session.commit()
+    response = client.get("/admin/dashboard", follow_redirects=True)
+    assert response.status_code == 200
+
+
+def test_admin_complaints_date_filter_inclusive_end_date(client, app):
+    _make_admin(app, client)
+    from datetime import datetime
+
+    with app.app_context():
+        citizen = User(
+            full_name="Citizen", email="citizen_date@example.com", role=Role.CITIZEN
+        )
+        citizen.set_password("Pass1234")
+        db.session.add(citizen)
+        db.session.flush()
+        cat = WasteCategory.query.filter_by(category_name="Organic Waste").first()
+        # One complaint mid-day on the end date.
+        report_same_day = Report(
+            user_id=citizen.id,
+            category_id=cat.id,
+            description="Same day complaint.",
+            reference="ET-DATE01",
+            status=ReportStatus.PENDING,
+            created_at=datetime(2026, 6, 10, 15, 30, 0),
+        )
+        # One complaint the day after the end date (must be excluded).
+        report_next_day = Report(
+            user_id=citizen.id,
+            category_id=cat.id,
+            description="Next day complaint.",
+            reference="ET-DATE02",
+            status=ReportStatus.PENDING,
+            created_at=datetime(2026, 6, 11, 8, 0, 0),
+        )
+        db.session.add_all([report_same_day, report_next_day])
+        db.session.commit()
+
+    response = client.get(
+        "/admin/complaints?date_from=2026-06-10&date_to=2026-06-10",
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert b"ET-DATE01" in response.data
+    assert b"ET-DATE02" not in response.data
+

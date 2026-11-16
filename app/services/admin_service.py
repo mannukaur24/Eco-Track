@@ -4,14 +4,20 @@ Business logic for complaint management, task assignment,
 staff management, category management, and awareness content.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta
+
+from sqlalchemy import func
+
 from app.extensions import db
 from app.models.user import User, Role, ReportStatus, TaskStatus
 from app.models.report import Report
+from app.models.report_status_history import ReportStatusHistory
 from app.models.waste_category import WasteCategory
 from app.models.collection_task import CollectionTask
 from app.models.awareness_article import AwarenessArticle
 from app.models.staff import Staff
+from app.services.complaint_service import ComplaintService
+from app.utils.datetime import utc_now
 
 
 class AdminService:
@@ -21,24 +27,62 @@ class AdminService:
 
     @staticmethod
     def dashboard_stats():
-        reports = Report.query.all()
-        tasks = CollectionTask.query.all()
-        now = datetime.now(timezone.utc)
-
-        overdue = 0
-        for t in tasks:
-            if t.task_status not in ("Completed",) and t.due_date and t.due_date < now:
-                overdue += 1
+        """Return complaint/task statistics using SQL aggregate queries."""
+        total_complaints = db.session.query(func.count(Report.id)).scalar() or 0
+        pending_complaints = (
+            db.session.query(func.count(Report.id))
+            .filter_by(status=ReportStatus.PENDING)
+            .scalar()
+            or 0
+        )
+        verified_complaints = (
+            db.session.query(func.count(Report.id))
+            .filter_by(status=ReportStatus.VERIFIED)
+            .scalar()
+            or 0
+        )
+        rejected_complaints = (
+            db.session.query(func.count(Report.id))
+            .filter_by(status=ReportStatus.REJECTED)
+            .scalar()
+            or 0
+        )
+        assigned_tasks = (
+            db.session.query(func.count(CollectionTask.id))
+            .filter_by(task_status=TaskStatus.ASSIGNED)
+            .scalar()
+            or 0
+        )
+        in_progress_tasks = (
+            db.session.query(func.count(CollectionTask.id))
+            .filter_by(task_status=TaskStatus.IN_PROGRESS)
+            .scalar()
+            or 0
+        )
+        completed_tasks = (
+            db.session.query(func.count(CollectionTask.id))
+            .filter_by(task_status=TaskStatus.COMPLETED)
+            .scalar()
+            or 0
+        )
+        overdue_tasks = (
+            db.session.query(func.count(CollectionTask.id))
+            .filter(CollectionTask.task_status != TaskStatus.COMPLETED)
+            .filter(CollectionTask.due_date.isnot(None))
+            .filter(CollectionTask.due_date < utc_now())
+            .scalar()
+            or 0
+        )
 
         return {
-            "total_complaints": len(reports),
-            "pending_complaints": sum(1 for r in reports if r.status == ReportStatus.PENDING),
-            "verified_complaints": sum(1 for r in reports if r.status == ReportStatus.VERIFIED),
-            "rejected_complaints": sum(1 for r in reports if r.status == ReportStatus.REJECTED),
-            "assigned_tasks": sum(1 for t in tasks if t.task_status == TaskStatus.ASSIGNED),
-            "in_progress_tasks": sum(1 for t in tasks if t.task_status == TaskStatus.IN_PROGRESS),
-            "completed_tasks": sum(1 for t in tasks if t.task_status == TaskStatus.COMPLETED),
-            "overdue_tasks": overdue,
+            "total_complaints": total_complaints,
+            "pending_complaints": pending_complaints,
+            "verified_complaints": verified_complaints,
+            "rejected_complaints": rejected_complaints,
+            "assigned_tasks": assigned_tasks,
+            "in_progress_tasks": in_progress_tasks,
+            "completed_tasks": completed_tasks,
+            "overdue_tasks": overdue_tasks,
         }
 
     # ---------- Complaint management ----------
@@ -53,9 +97,24 @@ class AdminService:
         if status:
             query = query.filter_by(status=status)
         if date_from:
-            query = query.filter(Report.created_at >= date_from)
+            try:
+                from_date = datetime.strptime(date_from, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                from_date = None
+            if from_date is not None:
+                query = query.filter(
+                    Report.created_at >= datetime.combine(from_date, time.min)
+                )
         if date_to:
-            query = query.filter(Report.created_at <= date_to)
+            try:
+                to_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                to_date = None
+            if to_date is not None:
+                # Include the entire selected end date (up to 23:59:59.999999).
+                query = query.filter(
+                    Report.created_at < datetime.combine(to_date + timedelta(days=1), time.min)
+                )
         return query.order_by(Report.created_at.desc()).all()
 
     @staticmethod
@@ -69,8 +128,16 @@ class AdminService:
             raise ValueError("Complaint not found.")
         if report.status != ReportStatus.PENDING:
             raise ValueError("Only pending complaints can be verified.")
+        previous_status = report.status
         report.status = ReportStatus.VERIFIED
-        report.updated_at = datetime.now(timezone.utc)
+        report.updated_at = utc_now()
+        ComplaintService.record_status_history(
+            report,
+            previous_status=previous_status,
+            new_status=ReportStatus.VERIFIED,
+            updated_by=admin_user.id,
+            remarks="Complaint verified by administrator.",
+        )
         db.session.commit()
         return report
 
@@ -83,9 +150,17 @@ class AdminService:
             raise ValueError("This complaint cannot be rejected.")
         if not reason or not reason.strip():
             raise ValueError("A rejection reason is required.")
+        previous_status = report.status
         report.status = ReportStatus.REJECTED
         report.rejection_reason = reason.strip()
-        report.updated_at = datetime.now(timezone.utc)
+        report.updated_at = utc_now()
+        ComplaintService.record_status_history(
+            report,
+            previous_status=previous_status,
+            new_status=ReportStatus.REJECTED,
+            updated_by=admin_user.id,
+            remarks=f"Complaint rejected: {reason.strip()}",
+        )
         db.session.commit()
         return report
 
@@ -132,8 +207,16 @@ class AdminService:
         )
         db.session.add(task)
 
+        previous_status = report.status
         report.status = ReportStatus.ASSIGNED
-        report.updated_at = datetime.now(timezone.utc)
+        report.updated_at = utc_now()
+        ComplaintService.record_status_history(
+            report,
+            previous_status=previous_status,
+            new_status=ReportStatus.ASSIGNED,
+            updated_by=admin_user.id,
+            remarks="Task assigned to collection staff.",
+        )
 
         db.session.commit()
         return task
@@ -253,7 +336,7 @@ class AdminService:
             content=content.strip(),
             topic=topic or None,
             is_published=bool(is_published),
-            published_at=datetime.now(timezone.utc) if is_published else None,
+            published_at=utc_now() if is_published else None,
         )
         db.session.add(article)
         db.session.commit()
@@ -269,7 +352,7 @@ class AdminService:
         article.topic = topic or None
         article.is_published = bool(is_published)
         if is_published and not article.published_at:
-            article.published_at = datetime.now(timezone.utc)
+            article.published_at = utc_now()
         elif not is_published:
             article.published_at = None
         db.session.commit()
@@ -282,7 +365,7 @@ class AdminService:
             raise ValueError("Article not found.")
         article.is_published = not article.is_published
         if article.is_published and not article.published_at:
-            article.published_at = datetime.now(timezone.utc)
+            article.published_at = utc_now()
         elif not article.is_published:
             article.published_at = None
         db.session.commit()

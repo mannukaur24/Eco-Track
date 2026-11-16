@@ -72,4 +72,9 @@ The `User.role` column stores one of these values. Helper methods `is_admin()`, 
 
 ## 7. Registration Role Constraints
 
-The public registration form offers only `Citizen` and `Collection Staff` roles. The `Administrator` role is excluded from public registration and is provisioned separately (see Section 2). This satisfies FR1 ("administrator accounts shall be provisioned securely") while keeping citizen/staff onboarding simple.
+The public registration form offers only the `Citizen` role. The `Administrator` and
+`Collection Staff` roles are excluded from public registration and are provisioned
+separately by an administrator (see Section 2), which prevents privilege escalation
+via public registration. Every administrator-created staff account receives a valid
+`Staff` profile. This satisfies FR1 ("administrator accounts shall be provisioned
+securely").

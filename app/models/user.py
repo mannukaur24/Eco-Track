@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
 from flask_login import UserMixin
 from app.extensions import db
+from app.utils.datetime import utc_now
 
 
 class Role:
@@ -52,11 +52,11 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default=Role.CITIZEN)
     phone = db.Column(db.String(20), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(
         db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=utc_now,
+        onupdate=utc_now,
     )
 
     reports = db.relationship(
@@ -79,6 +79,12 @@ class User(UserMixin, db.Model):
         back_populates="updated_by_user",
         lazy=True,
         foreign_keys="TaskUpdate.updated_by",
+    )
+    status_history_updates = db.relationship(
+        "ReportStatusHistory",
+        back_populates="updated_by_user",
+        lazy=True,
+        foreign_keys="ReportStatusHistory.updated_by",
     )
 
     def set_password(self, password):

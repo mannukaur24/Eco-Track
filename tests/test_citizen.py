@@ -191,7 +191,7 @@ def test_complaint_ownership(client):
     report = Report.query.filter_by(user_id=owner.id).first()
 
     # Register and login as a different citizen
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     _register(client, "other@example.com", "Other User")
     _login(client, "other@example.com")
 

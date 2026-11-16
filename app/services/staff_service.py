@@ -4,12 +4,14 @@ Business logic for staff task management: viewing assigned tasks,
 updating progress, adding remarks, and marking tasks complete.
 """
 
-from datetime import datetime, timezone
 from app.extensions import db
 from app.models.user import ReportStatus, TaskStatus
 from app.models.report import Report
+from app.models.report_status_history import ReportStatusHistory
 from app.models.collection_task import CollectionTask
 from app.models.task_update import TaskUpdate
+from app.services.complaint_service import ComplaintService
+from app.utils.datetime import utc_now
 
 
 class StaffService:
@@ -20,7 +22,7 @@ class StaffService:
     @staticmethod
     def dashboard_stats(staff_user):
         tasks = CollectionTask.query.filter_by(staff_id=staff_user.id).all()
-        now = datetime.now(timezone.utc)
+        now = utc_now()
 
         overdue = 0
         for t in tasks:
@@ -94,14 +96,25 @@ class StaffService:
             # Update task status
             task.task_status = new_status
             if new_status == TaskStatus.COMPLETED:
-                task.completed_at = datetime.now(timezone.utc)
-            task.updated_at = datetime.now(timezone.utc)
+                task.completed_at = utc_now()
+            task.updated_at = utc_now()
 
-            # Synchronise complaint status
+            # Synchronise complaint status in the same transaction
             report = task.report
-            if new_status == TaskStatus.COMPLETED:
+            if new_status == TaskStatus.IN_PROGRESS:
+                report.status = ReportStatus.IN_PROGRESS
+            elif new_status == TaskStatus.COMPLETED:
                 report.status = ReportStatus.COMPLETED
-            report.updated_at = datetime.now(timezone.utc)
+            report.updated_at = utc_now()
+
+            # Record complaint status history
+            ComplaintService.record_status_history(
+                report,
+                previous_status=previous_status,
+                new_status=new_status,
+                updated_by=staff_user.id,
+                remarks=remarks or "",
+            )
 
             db.session.commit()
             return task, update

@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.datetime import utc_now
 
 
 class AwarenessArticle(db.Model):
@@ -11,11 +11,11 @@ class AwarenessArticle(db.Model):
     topic = db.Column(db.String(100), nullable=True)
     is_published = db.Column(db.Boolean, default=False)
     published_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(
         db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=utc_now,
+        onupdate=utc_now,
     )
 
     def __repr__(self):

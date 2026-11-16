@@ -6,6 +6,7 @@ from app.models.report import Report
 from app.models.collection_task import CollectionTask
 from app.models.task_update import TaskUpdate
 from app.models.awareness_article import AwarenessArticle
+from app.models.report_status_history import ReportStatusHistory
 
 __all__ = [
     "User",
@@ -19,4 +20,5 @@ __all__ = [
     "CollectionTask",
     "TaskUpdate",
     "AwarenessArticle",
+    "ReportStatusHistory",
 ]

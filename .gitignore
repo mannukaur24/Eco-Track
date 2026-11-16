@@ -59,6 +59,13 @@ Thumbs.db
 .coverage
 htmlcov/
 
+# Packaging / release artifacts (never publish the EXE or secrets)
+dist/
+build/
+release/
+*.exe
+*.log
+
 # Local dev
 *.db
 *.sqlite3

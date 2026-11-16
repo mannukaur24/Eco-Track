@@ -11,7 +11,7 @@ from app.extensions import db
 from app.models.user import User, Role
 from app.models.waste_category import WasteCategory
 from app.models.awareness_article import AwarenessArticle
-from datetime import datetime, timezone
+from app.utils.datetime import utc_now
 
 
 def _seed_waste_categories():
@@ -71,7 +71,7 @@ def _seed_awareness_articles():
         ),
     ]
     count = 0
-    now = datetime.now(timezone.utc)
+    now = utc_now()
     for title, content, topic in articles:
         if not AwarenessArticle.query.filter_by(title=title).first():
             db.session.add(

@@ -46,7 +46,7 @@ def _login_admin(client, app, email="admin@example.com", password="AdminPass123"
             admin.set_password(password)
             db.session.add(admin)
             db.session.commit()
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     client.post(
         "/auth/login", data={"email": email, "password": password}, follow_redirects=True
     )
@@ -80,7 +80,7 @@ def test_staff_cannot_access_analytics(client, app):
         staff.set_password("StaffPass123")
         db.session.add(staff)
         db.session.commit()
-    client.get("/auth/logout", follow_redirects=True)
+    client.post("/auth/logout", follow_redirects=True)
     client.post(
         "/auth/login", data={"email": "staff@example.com", "password": "StaffPass123"},
         follow_redirects=True,

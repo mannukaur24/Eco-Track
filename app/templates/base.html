@@ -39,7 +39,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Profile</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">Change Password</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Log out</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="document.getElementById('logoutForm').submit(); return false;">Log out</a></li>
                         </ul>
                     </li>
                 {% else %}
@@ -50,6 +50,10 @@
         </div>
     </div>
 </nav>
+
+<form id="logoutForm" action="{{ url_for('auth.logout') }}" method="POST" style="display: none;">
+    {{ csrf_token() }}
+</form>
 
 <main class="container my-4">
     {% with messages = get_flashed_messages(with_categories=true) %}

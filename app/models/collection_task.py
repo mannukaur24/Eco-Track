@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
 from app.models.user import TaskStatus
 from app.extensions import db
+from app.utils.datetime import utc_now
 
 
 class CollectionTask(db.Model):
@@ -20,11 +20,11 @@ class CollectionTask(db.Model):
     task_status = db.Column(db.String(20), nullable=False, default=TaskStatus.ASSIGNED)
     instructions = db.Column(db.Text, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(
         db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=utc_now,
+        onupdate=utc_now,
     )
 
     report = db.relationship("Report", back_populates="tasks", foreign_keys=[report_id])

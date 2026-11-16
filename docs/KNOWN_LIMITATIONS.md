@@ -30,10 +30,11 @@ The following limitations are explicitly defined in the project synopsis and are
 
 | Limitation | Details |
 |------------|---------|
-| SQLite for tests | Tests run on SQLite, not MySQL 8; schema parity maintained via SQLAlchemy models |
+| SQLite for tests | Tests run on SQLite, not MySQL 8; schema parity maintained via SQLAlchemy models and the committed migration |
 | No browser automation | UI responsiveness verified via template inspection, not automated browser tests |
 | No Chart.js rendering tests | Charts verified via code inspection (Chart.js config present, `responsive: true`) |
 | No load/performance testing | Not performed; suitable for academic prototype scale |
+| No HTTPS testing | Secure cookies require HTTPS; development and tests use HTTP |
 
 ## 4. Feature Limitations
 
@@ -45,15 +46,18 @@ The following limitations are explicitly defined in the project synopsis and are
 | No bulk operations | Reports and tasks managed individually |
 | No advanced search | Search by complaint reference only (complaints) |
 | No export filtering by date for CSV | Monthly activity report has month filter; other CSV exports are full exports |
+| Status history coverage | `report_status_history` records transitions made after this change; records are not fabricated for complaints that predate the mechanism |
 
 ## 5. Deployment Limitations
 
 | Limitation | Details |
 |------------|---------|
 | HTTPS required in production | Secure cookies only work over HTTPS; development uses HTTP |
-| Environment variables required | SECRET_KEY and DB credentials must be set via `.env` |
-| Upload directory write access | Application needs write access to `app/static/uploads/` |
-| Database migrations | Flask-Migrate required for schema updates; not automatic |
+| Environment variables required | `SECRET_KEY` and DB credentials must be set via `.env` |
+| Production secret mandatory | The application refuses to start in production if `SECRET_KEY` is missing or shorter than 16 characters |
+| Upload directory write access | Application needs write access to `instance/uploads/` |
+| Database migrations | Flask-Migrate required for schema updates; not automatic. An initial migration is committed under `migrations/versions/` |
+| Not claimed production-ready | The application is an academic prototype. Security hardening (penetration testing, WAF, MySQL 8 deployment validation, dependency auditing) is recommended before any production use handling sensitive municipal data |
 
 ## 6. Data Limitations
 
@@ -61,7 +65,7 @@ The following limitations are explicitly defined in the project synopsis and are
 |------------|---------|
 | No data retention policy | Complaints and tasks are retained indefinitely |
 | No soft delete | Deleted records (categories, articles) are permanently removed |
-| No audit log for admin actions | Task updates record staff actions, but admin verify/reject/assign actions are not separately logged |
+| Audit log scope | Task updates record staff actions, and complaint status changes are audited, but other admin actions are not separately logged |
 | Location data optional | Reports can be submitted without latitude/longitude; map markers only for reports with coordinates |
 
 ## 7. Documentation Limitations

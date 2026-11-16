@@ -53,9 +53,10 @@
                     <p class="mb-0">{{ report.description }}</p>
                 </div>
                 {% if report.image_path %}
+                    {% set image_filename = report.image_path.rsplit("/", 1)[-1] %}
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Attached Photograph</label>
-                        <img src="{{ url_for('static', filename=report.image_path) }}" class="img-fluid bordered-img" alt="Complaint photo" style="max-height: 300px; object-fit: cover;">
+                        <img src="{{ url_for('main.serve_uploaded_image', filename=image_filename) }}" class="img-fluid bordered-img" alt="Complaint photo" style="max-height: 300px; object-fit: cover;">
                     </div>
                 {% endif %}
                 {% if report.rejection_reason %}

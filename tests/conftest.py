@@ -58,20 +58,27 @@ def citizen(client):
 
 
 @pytest.fixture
-def staff_user(client):
-    client.post(
-        "/auth/register",
-        data={
-            "full_name": "Staff User",
-            "email": "staff@example.com",
-            "password": "Password123",
-            "confirm_password": "Password123",
-            "role": "Staff",
-            "phone": "1234567891",
-        },
-        follow_redirects=True,
-    )
-    return User.query.filter_by(email="staff@example.com").first()
+def staff_user(app):
+    # Staff accounts are provisioned by an administrator, not via public
+    # registration. Create a staff user with a valid Staff profile directly.
+    with app.app_context():
+        user = User(
+            full_name="Staff User",
+            email="staff@example.com",
+            role=Role.STAFF,
+            phone="1234567891",
+            is_active=True,
+        )
+        user.set_password("Password123")
+        db.session.add(user)
+        db.session.flush()
+        from app.models.staff import Staff
+
+        db.session.add(
+            Staff(user_id=user.id, availability="Mon-Fri", service_area="Zone A")
+        )
+        db.session.commit()
+        return user
 
 
 @pytest.fixture

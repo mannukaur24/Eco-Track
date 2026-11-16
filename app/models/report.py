@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 from app.extensions import db
+from app.utils.datetime import utc_now
 
 
 class Report(db.Model):
@@ -20,11 +20,11 @@ class Report(db.Model):
     status = db.Column(db.String(20), nullable=False, default="Pending")
     rejection_reason = db.Column(db.Text, nullable=True)
     reference = db.Column(db.String(20), unique=True, nullable=True, index=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(
         db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=utc_now,
+        onupdate=utc_now,
     )
 
     citizen = db.relationship("User", back_populates="reports", foreign_keys=[user_id])
@@ -37,6 +37,13 @@ class Report(db.Model):
         back_populates="report",
         lazy=True,
         foreign_keys="CollectionTask.report_id",
+    )
+    status_history = db.relationship(
+        "ReportStatusHistory",
+        back_populates="report",
+        lazy=True,
+        foreign_keys="ReportStatusHistory.report_id",
+        order_by="ReportStatusHistory.created_at",
     )
 
     def __repr__(self):
