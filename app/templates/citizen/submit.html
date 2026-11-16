@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Complaint{{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="section-title">Submit a Waste Complaint</h2>
+        <p class="text-muted">Describe the issue, attach a photo, and select the location on the map.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Submission form -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Complaint Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" novalidate id="complaintForm">
+                    {{ csrf_token() }}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Waste Category <span class="text-danger">*</span></label>
+                            <select name="category_id" class="form-select" required>
+                                <option value="">Select a category</option>
+                                {% for c in categories %}
+                                    <option value="{{ c.id }}">{{ c.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Photograph <span class="text-danger">*</span></label>
+                            <input type="file" name="image" class="form-control" accept="image/*" required>
+                            <div class="form-text">Max 5 MB. Allowed: PNG, JPG, JPEG, GIF, WEBP.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Complaint Description <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control" rows="4" required
+                                      minlength="10" maxlength="2000"
+                                      placeholder="Describe the waste issue in detail..."></textarea>
+                            <div class="form-text">10 to 2000 characters.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Address <span class="text-danger">*</span></label>
+                            <input type="text" name="address_text" class="form-control" required
+                                   placeholder="Street address or area description">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Latitude</label>
+                            <input type="number" name="latitude" step="any" class="form-control" id="latitudeInput"
+                                   placeholder="e.g. 28.6139">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Longitude</label>
+                            <input type="number" name="longitude" step="any" class="form-control" id="longitudeInput"
+                                   placeholder="e.g. 77.2090">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Additional Information (optional)</label>
+                            <textarea name="additional_info" class="form-control" rows="2"
+                                      placeholder="Any extra details..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-4 d-grid">
+                        <button type="submit" class="btn btn-green btn-lg">Submit Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Select Location</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" style="height: 300px; width: 100%;"></div>
+                <div class="p-3 bg-light border-top small text-muted">
+                    Click on the map to set the report location. Latitude and longitude
+                    will be filled automatically. If the map does not load, enter coordinates manually.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map', { center: [28.6139, 77.2090], zoom: 13, zoomControl: true });
+
+    var baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    var marker = L.marker([28.6139, 77.2090]).addTo(map);
+
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng).update();
+        document.getElementById('latitudeInput').value = e.latlng.lat.toFixed(6);
+        document.getElementById('longitudeInput').value = e.latlng.lng.toFixed(6);
+    });
+
+    // Fallback handling: if tiles fail, show a message
+    baseLayer.on('tileerror', function() {
+        var notice = document.createElement('div');
+        notice.className = 'alert alert-warning mt-2';
+        notice.textContent = 'Map tiles are unavailable. Please enter coordinates manually.';
+        document.querySelector('.card-body').appendChild(notice);
+    });
+</script>
+{% endblock %}

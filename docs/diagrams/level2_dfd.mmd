@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph External_Entities["External Entities"]
+        C[Citizen]
+    end
+
+    subgraph Processes["Level 2 – Process 2.0: Submit and Manage Waste Reports"]
+        direction TB
+        2A[2.1 Capture citizen input<br/>category, description,<br/>location, photo]
+        2B[2.2 Authenticate citizen<br/>validate session]
+        2C[2.3 Validate fields & file<br/>type, size, required fields]
+        2D[2.4 Save report record<br/>generate unique reference]
+        2E[2.5 Link category,<br/>location & image path]
+        2F[2.6 Display acknowledgement<br/>show report reference]
+    end
+
+    subgraph DataStores["Data Stores"]
+        DS1[(Users)]
+        DS3[(Waste Categories)]
+        DS4[(Locations)]
+        DS5[(Reports)]
+    end
+
+    C -->|Report form input| 2A
+    2A -->|User credentials| 2B
+    2B -->|Verify user| DS1
+    2B -->|Authenticated user| 2C
+    2C -->|Category ID| DS3
+    2C -->|Location ID| DS4
+    2C -->|Validated data| 2D
+    2D -->|Create report row| DS5
+    2D -->|Report reference| 2E
+    2E -->|Link FKs & image| DS5
+    2E -->|Unique reference| 2F
+    2F -->|Confirmation message| C
+
+    style Processes fill:#e1f5e1,stroke:#333,stroke-width:2px

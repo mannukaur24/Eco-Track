@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" id="adminSidebar">
+            <div class="position-sticky pt-4 pt-md-0">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link link-light {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light {% if request.endpoint in ('admin.complaints','admin.complaint_detail','admin.verify_complaint','admin.reject_complaint') %}active{% endif %}" href="{{ url_for('admin.complaints') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Complaints
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light {% if request.endpoint == 'admin.staff_management' %}active{% endif %}" href="{{ url_for('admin.staff_management') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Staff
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light {% if request.endpoint == 'admin.categories' %}active{% endif %}" href="{{ url_for('admin.categories') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Categories
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light {% if request.endpoint == 'admin.awareness' %}active{% endif %}" href="{{ url_for('admin.awareness') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Awareness
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light {% if request.endpoint and request.endpoint.startswith('admin_analytics') %}active{% endif %}" href="{{ url_for('admin_analytics.analytics') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light" href="{{ url_for('admin_analytics.map_view') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Complaint Map
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link link-light" href="{{ url_for('admin_analytics.report_complaint_register') }}">
+                            <svg class="bi me-2" width="16" height="16"><path fill="currentColor" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 .5v-3H3a.5.5 0 0 1 0-1h3V4.5a.5.5 0 0 1 .5-.5z"/></svg>
+                            Download Reports
+                        </a>
+                    </li>
+                </ul>
+                <hr>
+                <div class="p-3 mt-4 text-white-50 small">
+                    <strong class="d-block">{{ current_user.full_name }}</strong>
+                    <span class="badge bg-success">{{ current_user.role }}</span>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link link-danger">Sign out</a>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<style>
+    .sidebar {
+        min-height: 100vh;
+    }
+    .nav-link.active {
+        background-color: rgba(255,255,255,.15);
+        border-left: 4px solid #fff;
+    }
+    .nav-link.link-light:hover {
+        background-color: rgba(255,255,255,.07);
+        color: #fff;
+    }
+    .stat-card {
+        border: none;
+        border-radius: 0.75rem;
+    }
+    .stat-icon {
+        font-size: 1.75rem;
+        opacity: 0.7;
+    }
+    .table th {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+</style>
+{% endblock %}

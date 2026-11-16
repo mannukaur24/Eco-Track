@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> OpenForm
+    OpenForm --> Authenticate : Citizen opens report form
+    Authenticate --> FillForm : Session valid
+    Authenticate --> [*] : Not authenticated -> login
+    FillForm --> ValidateInput : Enter category, description,<br/>location, attach photo
+    ValidateInput --> SaveReport : Server-side validation passes
+    ValidateInput --> FillForm : Validation fails -> show errors
+    SaveReport --> GenerateRef : Save report, category, location,<br/>image path
+    GenerateRef --> ShowAck : Generate unique reference
+    ShowAck --> [*] : Display acknowledgement<br/>(reference + status)

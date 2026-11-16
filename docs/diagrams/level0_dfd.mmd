@@ -1,0 +1,22 @@
+flowchart TD
+    subgraph External_Entities["External Entities"]
+        C[Citizen]
+        A[Administrator]
+        S[Collection Staff]
+    end
+
+    subgraph EcoTrack["EcoTrack System (Level 0)"]
+        P[((Smart Waste Management<br/>System))]
+    end
+
+    C -->|1. Submit waste report<br/>(description, category,<br/>photo, location)| P
+    P -->|2. Report acknowledgement<br/>(unique reference)| C
+    A -->|3. Review reports &<br/>assign collection tasks| P
+    P -->|4. Task assignments &<br/>status updates| A
+    S -->|5. View & update<br/>assigned tasks| P
+    P -->|6. Task progress &<br/>completion status| S
+    C -->|7. Track own report<br/>status| P
+    P -->|8. Report status &<br/>history| C
+
+    style EcoTrack fill:#e1f5e1,stroke:#333,stroke-width:2px
+    style P fill:#fff,stroke:#333,stroke-width:2px

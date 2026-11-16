@@ -1,0 +1,154 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Complaint {{ complaint.reference }}</h1>
+    <a href="{{ url_for('admin.complaints') }}" class="btn btn-sm btn-outline-secondary">Back to List</a>
+</div>
+
+<div class="row g-4">
+    <!-- Complaint info -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Complaint Details</h5>
+                <span class="badge bg-{{ status_badge(complaint.status) }}">{{ complaint.status }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Reference</label>
+                        <p class="mb-0">{{ complaint.reference }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Category</label>
+                        <p class="mb-0">{{ complaint.category.category_name if complaint.category else '—' }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Citizen</label>
+                        <p class="mb-0">{{ complaint.citizen.full_name }} ({{ complaint.citizen.email }})</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Location</label>
+                    <p class="mb-0">
+                        {{ complaint.location.address_text if complaint.location else '—' }}
+                        {% if complaint.location and complaint.location.latitude %}
+                        ({{ '%.4f'|format(complaint.location.latitude) }}, {{ '%.4f'|format(complaint.location.longitude) }})
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Description</label>
+                    <p class="mb-0">{{ complaint.description }}</p>
+                </div>
+                {% if complaint.image_path %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Attached Photograph</label>
+                    <img src="{{ url_for('static', filename=complaint.image_path) }}" class="img-fluid bordered-img" alt="Complaint photo" style="max-height: 300px; object-fit: cover;">
+                </div>
+                {% endif %}
+                {% if complaint.rejection_reason %}
+                <div class="alert alert-danger">
+                    <strong>Rejection Reason:</strong> {{ complaint.rejection_reason }}
+                </div>
+                {% endif %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Timestamps</label>
+                    <p class="mb-0 small">
+                        Submitted: {{ complaint.created_at.strftime('%d %b %Y, %I:%M %p') }}<br>
+                        Updated: {{ complaint.updated_at.strftime('%d %b %Y, %I:%M %p') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Administrator Actions</h5>
+            </div>
+            <div class="card-body">
+                {% if complaint.status == 'Pending' %}
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <form method="POST" action="{{ url_for('admin.verify_complaint', reference=complaint.reference) }}">
+                            <button type="submit" class="btn btn-info w-100" onclick="return confirm('Verify this complaint?')">Verify Complaint</button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">Reject Complaint</button>
+                    </div>
+                </div>
+                {% elif complaint.status == 'Verified' %}
+                <div class="alert alert-info">
+                    This complaint is verified and ready for task assignment.
+                </div>
+                {% endif %}
+
+                <!-- Task assignment form -->
+                {% if complaint.status == 'Verified' %}
+                <hr>
+                <h6 class="text-muted mb-3">Assign Collection Task</h6>
+                <form method="POST" action="{{ url_for('admin.assign_task') }}">
+                    <input type="hidden" name="reference" value="{{ complaint.reference }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Staff Member <span class="text-danger">*</span></label>
+                            <select name="staff_id" class="form-select" required>
+                                <option value="">Select staff</option>
+                                {% for s in staff %}
+                                <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Target Date</label>
+                            <input type="date" name="due_date" class="form-control">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold">Instructions</label>
+                            <textarea name="instructions" class="form-control" rows="2" placeholder="Assignment instructions..."></textarea>
+                        </div>
+                    </div>
+                    <div class="d-grid mt-2">
+                        <button type="submit" class="btn btn-green">Assign Task</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject modal -->
+    {% if complaint.status in ('Pending','Verified') %}
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Reject Complaint</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('admin.reject_complaint', reference=complaint.reference) }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Rejection Reason <span class="text-danger">*</span></label>
+                            <textarea name="rejection_reason" class="form-control" rows="3" required placeholder="Explain why this complaint is being rejected..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% macro status_badge(status) %}
+    {% set mapping = {'Pending':'warning','Verified':'info','Rejected':'danger','Assigned':'primary','In Progress':'primary','Completed':'success'} %}
+    {{ mapping[status] if mapping[status] is not none else 'secondary' }}
+{% endmacro %}

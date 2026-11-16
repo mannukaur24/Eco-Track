@@ -1,0 +1,381 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Analytics &amp; Reports</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<!-- Summary stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-lg-2">
+        <div class="card stat-card bg-primary text-white shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="small text-opacity-75">Total Complaints</div>
+                <div class="h4 mb-0">{{ summary.total }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-lg-2">
+        <div class="card stat-card bg-warning text-dark shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="small text-opacity-75">Pending</div>
+                <div class="h4 mb-0">{{ summary.pending }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-lg-2">
+        <div class="card stat-card bg-info text-white shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="small text-opacity-75">Verified</div>
+                <div class="h4 mb-0">{{ summary.verified }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-lg-2">
+        <div class="card stat-card bg-danger text-white shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="small text-opacity-75">Rejected</div>
+                <div class="h4 mb-0">{{ summary.rejected }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-lg-2">
+        <div class="card stat-card bg-success text-white shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="small text-opacity-75">Completed</div>
+                <div class="h4 mb-0">{{ summary.completed }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date filter -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small">Date Range</label>
+                <select name="preset" class="form-select" onchange="this.form.submit()">
+                    <option value="7days" {% if preset=='7days' %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30days" {% if preset=='30days' %}selected{% endif %}>Last 30 Days</option>
+                    <option value="3months" {% if preset=='3months' %}selected{% endif %}>Last 3 Months</option>
+                    <option value="custom" {% if preset=='custom' %}selected{% endif %}>Custom Range</option>
+                </select>
+            </div>
+            {% if preset == 'custom' %}
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small">From</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small">To</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+            {% endif %}
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Apply</button>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{{ url_for('admin_analytics.analytics') }}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Charts row 1: Category and Status -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Complaints by Category</h5>
+            </div>
+            <div class="card-body p-3">
+                {% if by_category.data | sum > 0 %}
+                    <canvas id="categoryChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center text-muted py-4">No data available.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Complaints by Status</h5>
+            </div>
+            <div class="card-body p-3">
+                {% if by_status.data | sum > 0 %}
+                    <canvas id="statusChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center text-muted py-4">No data available.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts row 2: Monthly submissions and resolved -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Monthly Complaint Submissions</h5>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="monthlySubChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Monthly Resolved Complaints</h5>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="monthlyResChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts row 3: Staff performance and Pending vs Completed -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Staff Task Completion Performance</h5>
+            </div>
+            <div class="card-body p-3">
+                {% if staff_perf.labels | length > 0 %}
+                    <canvas id="staffPerfChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center text-muted py-4">No data available.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Pending vs Completed Tasks</h5>
+            </div>
+            <div class="card-body p-3">
+                <canvas id="pendingVsCompletedChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart 4: Location-wise summary -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">Location-wise Complaint Summaries</h5>
+            </div>
+            <div class="card-body p-3">
+                {% if by_location.data | sum > 0 %}
+                    <canvas id="locationChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center text-muted py-4">No data available.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick report downloads -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="mb-0">Download Reports (CSV)</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_complaint_register') }}" class="btn btn-outline-primary w-100">Complaint Register</a>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_pending_complaints') }}" class="btn btn-outline-primary w-100">Pending Complaints</a>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_category_wise') }}" class="btn btn-outline-primary w-100">Category-wise</a>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_location_wise') }}" class="btn btn-outline-primary w-100">Location-wise</a>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_staff_workload') }}" class="btn btn-outline-primary w-100">Staff Workload</a>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_task_completion') }}" class="btn btn-outline-primary w-100">Task Completion</a>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin_analytics.report_monthly_activity') }}" class="btn btn-outline-primary w-100">Monthly Activity</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ by_category.labels | tojson }},
+            datasets: [{
+                label: 'Complaints',
+                data: {{ by_category.data | tojson }},
+                backgroundColor: 'rgba(46, 125, 50, 0.7)',
+                borderColor: 'rgba(46, 125, 50, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, title: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ by_status.labels | tojson }},
+            datasets: [{
+                data: {{ by_status.data | tojson }},
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(23, 162, 184, 0.7)',
+                    'rgba(220, 53, 69, 0.7)',
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(46, 125, 50, 0.7)'
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    const monthlySubCtx = document.getElementById('monthlySubChart').getContext('2d');
+    new Chart(monthlySubCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_sub.labels | tojson }},
+            datasets: [{
+                label: 'Submissions',
+                data: {{ monthly_sub.data | tojson }},
+                borderColor: 'rgba(46, 125, 50, 1)',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    const monthlyResCtx = document.getElementById('monthlyResChart').getContext('2d');
+    new Chart(monthlyResCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_res.labels | tojson }},
+            datasets: [{
+                label: 'Resolved',
+                data: {{ monthly_res.data | tojson }},
+                borderColor: 'rgba(46, 125, 50, 1)',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    const staffCtx = document.getElementById('staffPerfChart').getContext('2d');
+    new Chart(staffCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ staff_perf.labels | tojson }},
+            datasets: [{
+                label: 'Total Tasks',
+                data: {{ staff_perf.total | tojson }},
+                backgroundColor: 'rgba(13, 110, 253, 0.7)'
+            }, {
+                label: 'Completed',
+                data: {{ staff_perf.completed | tojson }},
+                backgroundColor: 'rgba(46, 125, 50, 0.7)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    const pvCtx = document.getElementById('pendingVsCompletedChart').getContext('2d');
+    new Chart(pvCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ pending_vs_completed.labels | tojson }},
+            datasets: [{
+                data: {{ pending_vs_completed.data | tojson }},
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(23, 162, 184, 0.7)',
+                    'rgba(46, 125, 50, 0.7)'
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    const locCtx = document.getElementById('locationChart').getContext('2d');
+    new Chart(locCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ by_location.labels | tojson }},
+            datasets: [{
+                label: 'Complaints',
+                data: {{ by_location.data | tojson }},
+                backgroundColor: 'rgba(220, 53, 69, 0.7)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+</script>
+{% endblock %}

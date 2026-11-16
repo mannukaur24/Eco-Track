@@ -1,0 +1,87 @@
+erDiagram
+    Users ||--o{ Reports : "submits"
+    Users ||--o{ Staff : "has profile"
+    Users ||--o{ Collection_Tasks : "assigned to (staff_id)"
+    Users ||--o{ Collection_Tasks : "assigned by (assigned_by)"
+    Users ||--o{ Task_Updates : "updates (updated_by)"
+
+    Waste_Categories ||--o{ Reports : "categorizes"
+    Locations ||--o{ Reports : "locates"
+
+    Reports ||--o{ Collection_Tasks : "generates"
+    Collection_Tasks ||--o{ Task_Updates : "has updates"
+
+    Users {
+        int id PK
+        string full_name
+        string email UK
+        string password_hash
+        string role "Citizen/Administrator/Staff"
+        string phone
+        datetime created_at
+    }
+
+    Staff {
+        int id PK
+        int user_id FK UK
+        string availability
+        string service_area
+    }
+
+    Waste_Categories {
+        int id PK
+        string category_name UK
+        string description
+    }
+
+    Locations {
+        int id PK
+        string address_text
+        float latitude
+        float longitude
+    }
+
+    Reports {
+        int id PK
+        int user_id FK
+        int category_id FK
+        int location_id FK
+        string description
+        string image_path
+        string status "Pending/Verified/Rejected/Assigned/In Progress/Completed"
+        string reference UK
+        datetime created_at
+        datetime updated_at
+    }
+
+    Collection_Tasks {
+        int id PK
+        int report_id FK
+        int staff_id FK
+        int assigned_by FK
+        datetime due_date
+        string task_status "Pending/In Progress/Completed/Overdue"
+        string instructions
+        datetime completed_at
+        datetime created_at
+    }
+
+    Task_Updates {
+        int id PK
+        int task_id FK
+        int updated_by FK
+        string status
+        string remarks
+        datetime created_at
+    }
+
+    Awareness_Articles {
+        int id PK
+        string title
+        string content
+        string topic
+        boolean is_published
+        datetime published_at
+        datetime created_at
+        datetime updated_at
+    }

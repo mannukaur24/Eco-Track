@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant C as Citizen
+    participant UI as Browser UI
+    participant App as Flask App
+    participant Auth as Auth Service
+    participant Val as Validation Service
+    participant DB as MySQL Database
+    participant FS as File System (uploads)
+
+    C->>UI: Open report form
+    UI->>C: Render form (categories, locations)
+    C->>UI: Fill category, description, location, photo
+    C->>UI: Submit form
+    UI->>App: POST /citizen/report (multipart)
+    App->>Auth: Validate session / current_user
+    Auth-->>App: Authenticated Citizen
+    App->>Val: Validate fields + file (type, size <=5MB)
+    Val-->>App: Validation OK
+    App->>FS: Save uploaded image (safe filename)
+    FS-->>App: image_path
+    App->>DB: INSERT Report (user_id, category_id,<br/>location_id, description, image_path, status='Pending')
+    App->>DB: Generate unique reference
+    DB-->>App: report_id + reference
+    App-->>UI: 200 + reference + acknowledgement
+    UI->>C: Display confirmation with reference

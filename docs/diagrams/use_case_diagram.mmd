@@ -1,0 +1,44 @@
+useCaseDiagram
+    actor Citizen as C
+    actor Administrator as A
+    actor "Collection Staff" as S
+
+    package "EcoTrack" {
+        usecase "UC1 Register / Login" as UC1
+        usecase "UC2 Manage Profile" as UC2
+        usecase "UC3 Submit Waste Report" as UC3
+        usecase "UC4 Upload Photograph" as UC4
+        usecase "UC5 Track Own Reports" as UC5
+        usecase "UC6 Review & Verify Reports" as UC6
+        usecase "UC7 Reject Report" as UC7
+        usecase "UC8 Assign Collection Task" as UC8
+        usecase "UC9 View Assigned Tasks" as UC9
+        usecase "UC10 Update Task Progress" as UC10
+        usecase "UC11 Dashboard & Analytics" as UC11
+        usecase "UC12 Browse Awareness Content" as UC12
+        usecase "UC13 Maintain Awareness Articles" as UC13
+    }
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    C --> UC4
+    C --> UC5
+    C --> UC12
+
+    A --> UC1
+    A --> UC2
+    A --> UC6
+    A --> UC7
+    A --> UC8
+    A --> UC11
+    A --> UC13
+
+    S --> UC1
+    S --> UC2
+    S --> UC9
+    S --> UC10
+
+    UC3 ..> UC4 : includes
+    UC8 ..> UC6 : extends
+    UC10 ..> UC9 : includes

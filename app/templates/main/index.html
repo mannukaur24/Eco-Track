@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Home – EcoTrack{% endblock %}
+
+{% block content %}
+<div class="row text-center mb-5">
+    <div class="col-12">
+        <h1 class="display-5 fw-bold">EcoTrack</h1>
+        <p class="lead">Smart Waste Management System</p>
+        <p class="text-muted">Report waste issues, track collection tasks, and manage waste complaints.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Citizen</h5>
+                <p class="card-text">Report waste-related problems with a description, category, photo, and location. Track the status of your own reports.</p>
+                {% if current_user.is_authenticated and current_user.is_citizen() %}
+                    <a href="{{ url_for('citizen.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Log in to report</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Administrator</h5>
+                <p class="card-text">Review and verify reports, assign collection tasks to staff, and view dashboards and analytics.</p>
+                {% if current_user.is_authenticated and current_user.is_admin() %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Log in</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Collection Staff</h5>
+                <p class="card-text">View assigned collection tasks and update progress, completion status, and remarks.</p>
+                {% if current_user.is_authenticated and current_user.is_staff() %}
+                    <a href="{{ url_for('staff.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Log in</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

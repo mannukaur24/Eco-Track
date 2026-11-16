@@ -1,0 +1,17 @@
+stateDiagram-v2
+    [*] --> OpenQueue : Administrator opens report queue
+    OpenQueue --> SelectReport : Filter pending/verified reports
+    SelectReport --> ReviewEvidence : Open report details & photo
+    ReviewEvidence --> Decision : Verify, reject, or request correction
+    Decision --> RejectReport : Reject with reason
+    Decision --> AssignTask : Verify report
+    RejectReport --> UpdateStatus : Set status = Rejected + reason
+    UpdateStatus --> NotifyCitizen : Citizen sees rejected status
+    NotifyCitizen --> [*]
+    AssignTask --> SelectStaff : Choose collection staff member
+    SelectStaff --> SetDueDate : Set target date & instructions
+    SetDueDate --> CreateTask : Save collection task (status=Pending)
+    CreateTask --> LinkReport : Link task to verified report
+    LinkReport --> UpdateReportStatus : Set report status = Assigned
+    UpdateReportStatus --> NotifyStaff : Task visible in staff dashboard
+    NotifyStaff --> [*]

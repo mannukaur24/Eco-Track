@@ -1,0 +1,159 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger">Sign out</a>
+    </div>
+</div>
+
+<!-- Statistics cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-primary text-white shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Total Complaints</div>
+                        <div class="h4 mb-0">{{ stats.total_complaints }}</div>
+                    </div>
+                    <div class="stat-icon"><svg class="bi" width="1" height="1"></svg><svg class="bi bi-file-earmark-text" width="1" height="1"></svg><i class="bi bi-chat-square-text"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-warning text-dark shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Pending</div>
+                        <div class="h4 mb-0">{{ stats.pending_complaints }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-clock"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-info text-white shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Verified</div>
+                        <div class="h4 mb-0">{{ stats.verified_complaints }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-danger text-white shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Rejected</div>
+                        <div class="h4 mb-0">{{ stats.rejected_complaints }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-success text-white shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Assigned Tasks</div>
+                        <div class="h4 mb-0">{{ stats.assigned_tasks }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-person-check"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-secondary shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">In Progress</div>
+                        <div class="h4 mb-0">{{ stats.in_progress_tasks }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-arrow-repeat"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-success text-white shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Completed</div>
+                        <div class="h4 mb-0">{{ stats.completed_tasks }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-check2"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card stat-card bg-danger text-white shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small text-opacity-75">Overdue</div>
+                        <div class="h4 mb-0">{{ stats.overdue_tasks }}</div>
+                    </div>
+                    <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent complaints -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Recent Complaints</h5>
+        <a href="{{ url_for('admin.complaints') }}" class="btn btn-sm btn-outline-green">View All</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Reference</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in recent_complaints %}
+                <tr>
+                    <td class="fw-bold">{{ c.reference }}</td>
+                    <td>{{ c.category.category_name if c.category else '—' }}</td>
+                    <td><span class="badge bg-{{ status_badge(c.status) }}">{{ c.status }}</span></td>
+                    <td>{{ c.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.complaint_detail', reference=c.reference) }}" class="btn btn-sm btn-outline-green">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-3">No complaints yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% macro status_badge(status) %}
+    {% set mapping = {'Pending':'warning','Verified':'info','Rejected':'danger','Assigned':'primary','In Progress':'primary','Completed':'success'} %}
+    {{ mapping[status] if mapping[status] is not none else 'secondary' }}
+{% endmacro %}

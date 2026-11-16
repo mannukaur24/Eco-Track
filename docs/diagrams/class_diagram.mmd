@@ -1,0 +1,115 @@
+classDiagram
+    class User {
+        +int id
+        +string fullName
+        +string email
+        +string passwordHash
+        +string role
+        +string phone
+        +datetime createdAt
+        +setPassword(password)
+        +checkPassword(password)
+        +isAdmin()
+        +isStaff()
+        +isCitizen()
+    }
+
+    class Staff {
+        +int id
+        +int userId
+        +string availability
+        +string serviceArea
+    }
+
+    class WasteCategory {
+        +int id
+        +string categoryName
+        +string description
+    }
+
+    class Location {
+        +int id
+        +string addressText
+        +float latitude
+        +float longitude
+    }
+
+    class Report {
+        +int id
+        +int userId
+        +int categoryId
+        +int locationId
+        +string description
+        +string imagePath
+        +string status
+        +string reference
+        +datetime createdAt
+        +datetime updatedAt
+    }
+
+    class CollectionTask {
+        +int id
+        +int reportId
+        +int staffId
+        +int assignedBy
+        +datetime dueDate
+        +string taskStatus
+        +string instructions
+        +datetime completedAt
+        +datetime createdAt
+    }
+
+    class TaskUpdate {
+        +int id
+        +int taskId
+        +int updatedBy
+        +string status
+        +string remarks
+        +datetime createdAt
+    }
+
+    class AwarenessArticle {
+        +int id
+        +string title
+        +string content
+        +string topic
+        +bool isPublished
+        +datetime publishedAt
+        +datetime createdAt
+        +datetime updatedAt
+    }
+
+    class Role {
+        <<enumeration>>
+        Citizen
+        Administrator
+        Staff
+    }
+
+    class ReportStatus {
+        <<enumeration>>
+        Pending
+        Verified
+        Rejected
+        Assigned
+        In Progress
+        Completed
+    }
+
+    class TaskStatus {
+        <<enumeration>>
+        Pending
+        In Progress
+        Completed
+        Overdue
+    }
+
+    User "1" -- "many" Report : submits
+    User "1" -- "0..1" Staff : profile
+    User "1" -- "many" CollectionTask : assigned to
+    User "1" -- "many" CollectionTask : assigned by
+    User "1" -- "many" TaskUpdate : updates
+    WasteCategory "1" -- "many" Report : categorizes
+    Location "1" -- "many" Report : locates
+    Report "1" -- "many" CollectionTask : generates
+    CollectionTask "1" -- "many" TaskUpdate : has

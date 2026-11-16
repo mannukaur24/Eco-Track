@@ -1,0 +1,109 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Complaint Management</h1>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small">Search by Reference</label>
+                <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="e.g. ET-ABCD1234">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">Category</label>
+                <select name="category_id" class="form-select">
+                    <option value="">All categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_id == cat.id %}selected{% endif %}>{{ cat.category_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    <option value="Pending" {% if status=='Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Verified" {% if status=='Verified' %}selected{% endif %}>Verified</option>
+                    <option value="Rejected" {% if status=='Rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="Assigned" {% if status=='Assigned' %}selected{% endif %}>Assigned</option>
+                    <option value="In Progress" {% if status=='In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Completed" {% if status=='Completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">From Date</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">To Date</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-green w-100">Filter</button>
+            </div>
+            <div class="col-md-1">
+                <a href="{{ url_for('admin.complaints') }}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Complaints table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ complaints|length }} Complaint{{ 's' if complaints|length != 1 else '' }}</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Reference</th>
+                    <th>Category</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td class="fw-bold">{{ c.reference }}</td>
+                    <td>{{ c.category.category_name if c.category else '—' }}</td>
+                    <td>
+                        <small>{{ c.location.address_text if c.location else '—' }}</small>
+                    </td>
+                    <td><span class="badge bg-{{ status_badge(c.status) }}">{{ c.status }}</span></td>
+                    <td>{{ c.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('admin.complaint_detail', reference=c.reference) }}" class="btn btn-sm btn-outline-green">View</a>
+                            {% if c.status == 'Pending' %}
+                                <form method="POST" action="{{ url_for('admin.verify_complaint', reference=c.reference) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Verify this complaint?')">Verify</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.reject_complaint', reference=c.reference) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this complaint? A reason is required.')">Reject</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-3">No complaints found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% macro status_badge(status) %}
+    {% set mapping = {'Pending':'warning','Verified':'info','Rejected':'danger','Assigned':'primary','In Progress':'primary','Completed':'success'} %}
+    {{ mapping[status] if mapping[status] is not none else 'secondary' }}
+{% endmacro %}

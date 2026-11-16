@@ -1,0 +1,81 @@
+flowchart TB
+    subgraph External_Entities["External Entities"]
+        C[Citizen]
+        A[Administrator]
+        S[Collection Staff]
+    end
+
+    subgraph EcoTrack["EcoTrack System (Level 1)"]
+        direction TB
+        subgraph P1["1.0 User Management"]
+            P1A[(Register / Login)]
+            P1B[(Profile Management)]
+        end
+        subgraph P2["2.0 Waste Report Handling"]
+            P2A[(Submit Report)]
+            P2B[(Review & Verify Report)]
+            P2C[(Track Report Status)]
+        end
+        subgraph P3["3.0 Collection Task Management"]
+            P3A[(Assign Task)]
+            P3B[(Update Task Progress)]
+        end
+        subgraph P4["4.0 Reporting & Awareness"]
+            P4A[(Dashboard & Analytics)]
+            P4B[(Awareness Content)]
+        end
+    end
+
+    subgraph DataStores["Data Stores"]
+        DS1[(Users)]
+        DS2[(Staff)]
+        DS3[(Waste Categories)]
+        DS4[(Locations)]
+        DS5[(Reports)]
+        DS6[(Collection Tasks)]
+        DS7[(Task Updates)]
+        DS8[(Awareness Articles)]
+    end
+
+    C -->|Register/Login| P1A
+    C -->|Update profile| P1B
+    P1A -->|Validate credentials| DS1
+    P1B -->|Read/Write| DS1
+
+    C -->|Submit report + image| P2A
+    P2A -->|Validate & save| DS5
+    P2A -->|Link category| DS3
+    P2A -->|Link location| DS4
+    P2A -->|Store image path| DS5
+    P2A -->|Acknowledge (reference)| C
+
+    A -->|Review pending reports| P2B
+    P2B -->|Verify/Reject| DS5
+    P2B -->|Record reason| DS5
+    A -->|Assign staff + due date| P3A
+    P3A -->|Create task| DS6
+    P3A -->|Link staff| DS2
+    P3A -->|Link report| DS5
+
+    S -->|View assigned tasks| P3B
+    P3B -->|Read tasks| DS6
+    S -->|Submit progress/remarks| P3B
+    P3B -->|Store update| DS7
+    P3B -->|Update task status| DS6
+
+    C -->|Track own reports| P2C
+    P2C -->|Read reports| DS5
+    P2C -->|Read updates| DS7
+    P2C -->|Show status| C
+
+    A -->|View summaries| P4A
+    P4A -->|Aggregate counts| DS5
+    P4A -->|Aggregate counts| DS6
+    P4A -->|Charts & reports| A
+
+    A -->|Maintain articles| P4B
+    P4B -->|Read/Write| DS8
+    C -->|Browse articles| P4B
+    P4B -->|Display content| C
+
+    style EcoTrack fill:#e1f5e1,stroke:#333,stroke-width:2px

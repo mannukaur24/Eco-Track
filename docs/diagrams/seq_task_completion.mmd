@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant S as Collection Staff
+    participant UI as Browser UI
+    participant App as Flask App
+    participant Authz as Role Authorization
+    participant DB as MySQL Database
+
+    S->>UI: Log in (Collection Staff role)
+    UI->>App: POST /auth/login
+    App->>Authz: Verify role = Staff
+    Authz-->>App: Authorized
+    App-->>UI: Staff dashboard
+    UI->>S: Show assigned tasks
+
+    S->>UI: Open task details
+    UI->>App: GET /staff/task/:id
+    App->>Authz: Check task.staff_id == current_user.id
+    Authz-->>App: Owner authorized
+    App->>DB: SELECT Task + Updates (task_id)
+    DB-->>App: Task + update history
+    App-->>UI: Render task detail
+    UI->>S: Display task, status, remarks
+
+    S->>UI: Enter progress status + remarks
+    S->>UI: Submit task update
+    UI->>App: POST /staff/task/:id/update
+    App->>Authz: Check ownership + valid status
+    Authz-->>App: Authorized
+    App->>DB: INSERT TaskUpdate (task_id, updated_by,<br/>status, remarks)
+    App->>DB: UPDATE CollectionTask set task_status,<br/>completed_at if completed
+    DB-->>App: Update OK
+    App-->>UI: 200 + confirmation
+    UI->>S: Display updated task status
+
+    note over UI,DB: Citizen & Admin views reflect<br/>latest status on next load

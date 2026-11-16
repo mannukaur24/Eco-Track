@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Home{{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="hero-section mb-5">
+    <div class="container">
+        <h1 class="display-4 fw-bold">EcoTrack</h1>
+        <p class="lead fs-4 mb-4">Smart Waste Management System</p>
+        <p class="mb-4">
+            A responsive platform for citizens to report waste-related problems,
+            administrators to manage complaints, and collection staff to track progress.
+        </p>
+        <div class="d-grid d-md-flex justify-content-md-center gap-3">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.index') }}" class="btn btn-light btn-lg px-4">Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg px-4">Register</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg px-4">Log in</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="container">
+        <h2 class="section-title">About EcoTrack</h2>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <p>
+                    Solid waste management affects environmental cleanliness, community
+                    well-being, and quality of life. EcoTrack provides a centralized,
+                    digital channel to report unattended waste, overflowing bins, and
+                    improper disposal — then track progress until resolved.
+                </p>
+                <p>
+                    This is an academic prototype developed as a BCA final-year project.
+                    It is not connected to live municipal authorities or waste collection
+                    services.
+                </p>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="feature-card p-4 text-center">
+                            <div class="feature-icon">📋</div>
+                            <h5>Report Waste</h5>
+                            <p class="small text-muted">Submit complaints with photos and location.</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feature-card p-4 text-center">
+                            <div class="feature-icon">🗂️</div>
+                            <h5>Manage Tasks</h5>
+                            <p class="small text-muted">Administrators assign collection tasks.</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feature-card p-4 text-center">
+                            <div class="feature-icon">✅</div>
+                            <h5>Track Progress</h5>
+                            <p class="small text-muted">Staff update status; citizens track reports.</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feature-card p-4 text-center">
+                            <div class="feature-icon">♻️</div>
+                            <h5>Awareness</h5>
+                            <p class="small text-muted">Recycling and responsible disposal tips.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="bg-light-green mb-5">
+    <div class="container py-5">
+        <h2 class="section-title text-center">How It Works</h2>
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="feature-card p-4">
+                    <div class="feature-icon">1️⃣</div>
+                    <h5>Register &amp; Log In</h5>
+                    <p class="small">Create an account as a citizen or collection staff member.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4">
+                    <div class="feature-icon">2️⃣</div>
+                    <h5>Submit a Report</h5>
+                    <p class="small">Describe the issue, choose a category, add a photo and location.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4">
+                    <div class="feature-icon">3️⃣</div>
+                    <h5>Track &amp; Resolve</h5>
+                    <p class="small">Administrators assign tasks; staff update progress until completed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="container">
+        <h2 class="section-title">Environmental Awareness</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card p-4 h-100">
+                    <h5>Segregate at Source</h5>
+                    <p class="small">Separate organic, plastic, paper, and hazardous waste for better recycling.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4 h-100">
+                    <h5>Reduce &amp; Reuse</h5>
+                    <p class="small">Minimize single-use items and choose reusable alternatives wherever possible.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4 h-100">
+                    <h5>Dispose Responsibly</h5>
+                    <p class="small">Use authorized bins and report illegal dumping through EcoTrack.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
