@@ -74,6 +74,7 @@
                 <div class="row g-2 mb-3">
                     <div class="col-md-6">
                         <form method="POST" action="{{ url_for('admin.verify_complaint', reference=complaint.reference) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-info w-100" onclick="return confirm('Verify this complaint?')">Verify Complaint</button>
                         </form>
                     </div>
@@ -92,6 +93,7 @@
                 <hr>
                 <h6 class="text-muted mb-3">Assign Collection Task</h6>
                 <form method="POST" action="{{ url_for('admin.assign_task') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="reference" value="{{ complaint.reference }}">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -131,6 +133,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form method="POST" action="{{ url_for('admin.reject_complaint', reference=complaint.reference) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Rejection Reason <span class="text-danger">*</span></label>

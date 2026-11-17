@@ -214,6 +214,19 @@ def delete_category(category_id):
     return redirect(url_for("admin.categories"))
 
 
+@admin_bp.route("/categories/<int:category_id>/toggle", methods=["POST"])
+@login_required
+@administrator_required
+def toggle_category(category_id):
+    try:
+        category = AdminService.toggle_category(category_id)
+        status = "activated" if category.is_active else "deactivated"
+        flash(f"Category '{category.category_name}' {status}.", "success")
+    except ValueError as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("admin.categories"))
+
+
 @admin_bp.route("/awareness")
 @login_required
 @administrator_required

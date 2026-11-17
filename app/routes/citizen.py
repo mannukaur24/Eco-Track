@@ -29,7 +29,11 @@ def dashboard():
 @login_required
 @citizen_required
 def submit():
-    categories = WasteCategory.query.order_by(WasteCategory.category_name).all()
+    categories = (
+        WasteCategory.query.filter_by(is_active=True)
+        .order_by(WasteCategory.category_name)
+        .all()
+    )
     if request.method == "POST":
         form_data = {
             "category_id": request.form.get("category_id"),

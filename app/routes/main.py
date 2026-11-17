@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, abort, send_from_directory
+from flask import Blueprint, current_app, abort, send_from_directory, flash, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import text
 import os
@@ -13,6 +13,27 @@ main_bp = Blueprint("main", __name__)
 def index():
     from flask import render_template
     return render_template("index.html")
+
+
+@main_bp.route("/dashboard")
+@login_required
+def dashboard():
+    """Centralized dashboard redirect endpoint based on the user's role.
+
+    Unauthenticated users are handled by Flask-Login (redirect to login).
+    Inactive accounts cannot reach a protected dashboard.
+    """
+    if not current_user.is_active:
+        flash("Your account has been deactivated. Contact an administrator.", "danger")
+        return redirect(url_for("auth.login"))
+    if current_user.is_admin():
+        return redirect(url_for("admin.dashboard"))
+    if current_user.is_staff():
+        return redirect(url_for("staff.dashboard"))
+    if current_user.is_citizen():
+        return redirect(url_for("citizen.dashboard"))
+    flash("You do not have permission to access the dashboard.", "danger")
+    return abort(403)
 
 
 @main_bp.route("/health")

@@ -323,6 +323,20 @@ class AdminService:
         db.session.delete(category)
         db.session.commit()
 
+    @staticmethod
+    def toggle_category(category_id):
+        """Activate or deactivate a category.
+
+        Deactivating removes the category from the Citizen Portal complaint
+        form without deleting it or affecting existing complaints.
+        """
+        category = db.session.get(WasteCategory, int(category_id))
+        if category is None:
+            raise ValueError("Category not found.")
+        category.is_active = not category.is_active
+        db.session.commit()
+        return category
+
     # ---------- Awareness content management ----------
 
     @staticmethod

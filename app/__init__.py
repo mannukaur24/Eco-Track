@@ -99,7 +99,8 @@ def _register_template_context(app):
 
 
 def _register_cli_commands(app):
-    from app.services.commands import seed_db, create_admin
+    from app.services.commands import seed_db, seed_categories, create_admin
 
     app.cli.add_command(seed_db)
+    app.cli.add_command(seed_categories)
     app.cli.add_command(create_admin)

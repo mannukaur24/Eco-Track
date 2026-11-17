@@ -13,6 +13,7 @@
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('admin.add_category') }}" class="row g-3 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-4">
                 <label class="form-label fw-bold small">Category Name <span class="text-danger">*</span></label>
                 <input type="text" name="category_name" class="form-control" required>
@@ -39,6 +40,7 @@
                 <tr>
                     <th>Category Name</th>
                     <th>Description</th>
+                    <th>Status</th>
                     <th>Complaints</th>
                     <th>Actions</th>
                 </tr>
@@ -48,12 +50,26 @@
                 <tr>
                     <td class="fw-bold">{{ cat.category_name }}</td>
                     <td>{{ cat.description or '—' }}</td>
+                    <td>
+                        {% if cat.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
                     <td>{{ cat.reports|length }}</td>
                     <td>
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-sm btn-outline-green" data-bs-toggle="modal" data-bs-target="#editModal{{ cat.id }}">Edit</button>
+                            <form method="POST" action="{{ url_for('admin.toggle_category', category_id=cat.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-{% if cat.is_active %}danger{% else %}success{% endif %}">
+                                    {% if cat.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                            </form>
                             <form method="POST" action="{{ url_for('admin.delete_category', category_id=cat.id) }}" class="d-inline" onsubmit="return confirm('Delete this category? It cannot be undone.')">
-                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-danger" {% if cat.reports %}disabled title="Cannot delete: referenced by existing complaints"{% endif %}>Delete</button>
                             </form>
                         </div>
                     </td>
@@ -67,6 +83,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <form method="POST" action="{{ url_for('admin.edit_category', category_id=cat.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <div class="modal-body">
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Category Name <span class="text-danger">*</span></label>

@@ -7,6 +7,7 @@ class WasteCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_name = db.Column(db.String(80), unique=True, nullable=False, index=True)
     description = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
 
     reports = db.relationship("Report", back_populates="category", lazy=True)
 

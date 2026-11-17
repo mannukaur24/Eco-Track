@@ -45,11 +45,12 @@ as described in sections 2–12.
 
 | Control | Implementation | Status |
 |---------|---------------|--------|
-| CSRF protection | Flask-WTF `CSRFProtect` initialized on app | PASS |
-| CSRF on forms | All WTForms include `{{ form.hidden_tag() }}` / `{{ csrf_token() }}` | PASS |
-| CSRF in tests | Disabled only in TestingConfig for test convenience | PASS |
-| State-changing forms | All POST/PUT/DELETE routes protected | PASS |
-| Logout | POST-only, CSRF-protected | PASS |
+| CSRF protection | Flask-WTF `CSRFProtect` initialized exactly once in `app/extensions.py` and bound to the app in `app/__init__.py` | PASS |
+| CSRF on forms | All FlaskForm forms use `{{ form.hidden_tag() }}`; all plain HTML POST forms submit `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">` | PASS |
+| CSRF in tests | Disabled only in `TestingConfig` for test convenience; a dedicated `tests/test_csrf.py` suite runs with `WTF_CSRF_ENABLED=True` | PASS |
+| State-changing forms | All POST forms (login, register, profile, change password, complaint submission, admin verify/reject/assign, staff add/toggle/edit, category add/edit/delete, article add/toggle/edit/delete, staff task update, logout) protected | PASS |
+| Logout | POST-only (`/auth/logout`, methods=["POST"]), CSRF-protected named hidden field in `base.html`, `admin/base.html`, and `admin/dashboard.html` | PASS |
+| CSRF audit remediation | Previously, `base.html` logout form and `citizen/submit.html` multipart form rendered `{{ csrf_token() }}` as bare text (never submitted as a field), and 18 plain HTML POST forms had no token at all. All now submit a named `csrf_token` hidden input. Verified via CSRF-enabled tests. | PASS |
 
 ## 6. SQL Injection Risks
 
@@ -146,7 +147,7 @@ as described in sections 2–12.
 
 | Severity | Findings | Count |
 |----------|----------|-------|
-| Critical | None remediated; open redirect, insecure production secret fallback, public staff registration, and unprotected complaint images were fixed | 0 open |
+| Critical | None remediated; open redirect, insecure production secret fallback, public staff registration, unprotected complaint images, and CSRF token rendering (bare `{{ csrf_token() }}` not submitted as a field; 18 plain HTML POST forms missing a token) were fixed | 0 open |
 | High | None open | 0 open |
 | Medium | None open | 0 open |
 | Low | CSRF disabled in test config (test-only) | 1 |

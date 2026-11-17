@@ -85,9 +85,11 @@
                             <a href="{{ url_for('admin.complaint_detail', reference=c.reference) }}" class="btn btn-sm btn-outline-green">View</a>
                             {% if c.status == 'Pending' %}
                                 <form method="POST" action="{{ url_for('admin.verify_complaint', reference=c.reference) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Verify this complaint?')">Verify</button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.reject_complaint', reference=c.reference) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this complaint? A reason is required.')">Reject</button>
                                 </form>
                             {% endif %}

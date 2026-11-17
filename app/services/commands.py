@@ -15,15 +15,16 @@ from app.utils.datetime import utc_now
 
 
 def _seed_waste_categories():
+    """Insert the default waste categories that are missing from the DB.
+
+    Existing category records are preserved; only categories whose name is not
+    already present are inserted. Newly created categories are active by
+    default so they appear in the Citizen Portal complaint form.
+    """
     categories = [
-        ("Organic Waste", "Kitchen scraps, food waste, garden waste."),
         ("Plastic Waste", "Bottles, bags, packaging and other plastic items."),
-        ("Paper Waste", "Newspapers, cardboard, office paper."),
-        ("Glass Waste", "Bottles and jars."),
-        ("Metal Waste", "Cans, tins, scrap metal."),
-        ("E-Waste", "Electronic items, batteries, cables."),
-        ("Hazardous Waste", "Chemicals, paints, medical waste."),
-        ("General Waste", "Mixed household waste."),
+        ("Organic Waste", "Kitchen scraps, food waste, garden waste."),
+        ("Electronic Waste", "Electronic items, batteries, cables."),
         ("Household Waste", "Everyday household rubbish and trash."),
         ("Construction Waste", "Debris from construction and demolition work."),
         ("Industrial Waste", "Waste generated from industrial and factory processes."),
@@ -33,7 +34,7 @@ def _seed_waste_categories():
     for name, description in categories:
         if not WasteCategory.query.filter_by(category_name=name).first():
             db.session.add(
-                WasteCategory(category_name=name, description=description)
+                WasteCategory(category_name=name, description=description, is_active=True)
             )
             count += 1
     db.session.commit()
@@ -95,6 +96,18 @@ def seed_db():
     cats = _seed_waste_categories()
     arts = _seed_awareness_articles()
     click.echo(f"Seeded {cats} waste categories and {arts} awareness articles.")
+
+
+@click.command("seed-categories")
+@with_appcontext
+def seed_categories():
+    """Seed missing default waste categories into the configured database.
+
+    Inserts only categories that do not already exist, so it is safe to run
+    repeatedly. Newly created categories are active by default.
+    """
+    count = _seed_waste_categories()
+    click.echo(f"Seeded {count} missing waste category/categories.")
 
 
 @click.command("create-admin")

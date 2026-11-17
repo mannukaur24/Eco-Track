@@ -18,13 +18,20 @@
                 <h5 class="mb-0">Complaint Details</h5>
             </div>
             <div class="card-body">
+                {% if not categories %}
+                <div class="alert alert-warning mb-3">
+                    No waste categories are available at the moment. Please
+                    contact the administrator to add categories before
+                    submitting a complaint.
+                </div>
+                {% endif %}
                 <form method="POST" enctype="multipart/form-data" novalidate id="complaintForm">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Waste Category <span class="text-danger">*</span></label>
-                            <select name="category_id" class="form-select" required>
-                                <option value="">Select a category</option>
+                            <select name="category_id" class="form-select" required {% if not categories %}disabled{% endif %}>
+                                <option value="">Select Waste Category</option>
                                 {% for c in categories %}
                                     <option value="{{ c.id }}">{{ c.category_name }}</option>
                                 {% endfor %}

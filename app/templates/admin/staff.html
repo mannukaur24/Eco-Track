@@ -13,6 +13,7 @@
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('admin.add_staff') }}" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="col-md-3">
                 <label class="form-label fw-bold small">Full Name <span class="text-danger">*</span></label>
                 <input type="text" name="full_name" class="form-control" required>
@@ -87,6 +88,7 @@
                     <td>
                         <div class="btn-group" role="group">
                             <form method="POST" action="{{ url_for('admin.toggle_staff', user_id=s.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-{{ 'btn-danger' if s.is_active else 'btn-success' }}" onclick="return confirm('{{ 'Deactivate' if s.is_active else 'Activate' }} this staff member?')">
                                     {{ 'Deactivate' if s.is_active else 'Activate' }}
                                 </button>
@@ -105,6 +107,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <form method="POST" action="{{ url_for('admin.edit_staff', user_id=s.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <div class="modal-body">
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Full Name</label>

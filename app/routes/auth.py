@@ -133,7 +133,7 @@ def login():
         flash(f"Welcome back, {user.full_name}.", "success")
         next_page = request.args.get("next")
         if not _is_safe_redirect_url(next_page):
-            next_page = url_for("main.index")
+            next_page = url_for("main.dashboard")
         return redirect(next_page)
     return render_template("auth/login.html", form=form)
 

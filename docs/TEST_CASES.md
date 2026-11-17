@@ -1,6 +1,6 @@
 # Test Cases – EcoTrack
 
-Actual test results from the latest test suite execution. All **106 tests pass**.
+Actual test results from the latest test suite execution. All **158 tests pass**.
 
 ## A. Authentication Tests
 
@@ -178,6 +178,35 @@ Actual test results from the latest test suite execution. All **106 tests pass**
 | Awareness article | Create published article | Article with is_published flag | Pass | PASS |
 | Status values | Verify ReportStatus and TaskStatus constants | Correct string values | Pass | PASS |
 
+## N. CSRF Protection Tests
+
+| Test Case | Description | Expected | Actual | Status |
+|-----------|-------------|----------|--------|--------|
+| Registration form renders CSRF token | GET /auth/register | `csrf_token` hidden input present | Pass | PASS |
+| Registration valid POST with token | POST /auth/register with valid `csrf_token` | Account created, HTTP 200 | Pass | PASS |
+| Registration POST without token | POST /auth/register omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Registration POST invalid token | POST /auth/register with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+| Login form renders CSRF token | GET /auth/login | `csrf_token` hidden input present | Pass | PASS |
+| Login valid POST with token | POST /auth/login with valid `csrf_token` | Session established, HTTP 200 | Pass | PASS |
+| Login POST without token | POST /auth/login omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Login POST invalid token | POST /auth/login with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+| Logout POST with token | POST /auth/logout with valid `csrf_token` | Session cleared, HTTP 200 | Pass | PASS |
+| Logout POST without token | POST /auth/logout omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Logout POST invalid token | POST /auth/logout with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+| Complaint submission form renders CSRF token | GET /citizen/submit | `csrf_token` hidden input present | Pass | PASS |
+| Complaint submission valid POST with token | POST /citizen/submit (multipart) with valid `csrf_token` | Complaint created, HTTP 200 | Pass | PASS |
+| Complaint submission POST without token | POST /citizen/submit omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Complaint submission POST invalid token | POST /citizen/submit with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+| Admin verify complaint | POST /admin/complaints/<tool_call>/verify with valid `csrf_token` | Complaint verified, HTTP 200 | Pass | PASS |
+| Admin verify complaint without token | POST /admin/complaints/<tool_call>/verify omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Admin verify complaint invalid token | POST /admin/complaints/<tool_call>/verify with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+| Admin assign staff | POST /admin/tasks/assign with valid `csrf_token` | Task created, complaint assigned, HTTP 200 | Pass | PASS |
+| Admin assign staff without token | POST /admin/tasks/assign omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Admin assign staff invalid token | POST /admin/tasks/assign with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+| Staff task progress update | POST /staff/tasks/<id>/update with valid `csrf_token` | Task status updated, HTTP 200 | Pass | PASS |
+| Staff task update without token | POST /staff/tasks/<id>/update omitting `csrf_token` | HTTP 400 | Pass | PASS |
+| Staff task update invalid token | POST /staff/tasks/<id>/update with `csrf_token=invalid-token` | HTTP 400 | Pass | PASS |
+
 ## Summary
 
 | Category | Test Cases | Passed | Failed |
@@ -195,4 +224,6 @@ Actual test results from the latest test suite execution. All **106 tests pass**
 | Database Migration | 2 | 2 | 0 |
 | Health Check | 2 | 2 | 0 |
 | Database Models | 13 | 13 | 0 |
-| **Total** | **106** | **106** | **0** |
+| CSRF Protection | 24 | 24 | 0 |
+| **Total** | **158** | **158** | **0** |
+

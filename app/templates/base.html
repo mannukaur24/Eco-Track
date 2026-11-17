@@ -52,7 +52,7 @@
 </nav>
 
 <form id="logoutForm" action="{{ url_for('auth.logout') }}" method="POST" style="display: none;">
-    {{ csrf_token() }}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
 <main class="container my-4">

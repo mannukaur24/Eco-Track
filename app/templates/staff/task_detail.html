@@ -115,6 +115,7 @@
                     </div>
                 {% else %}
                     <form method="POST" action="{{ url_for('staff.update_task', task_id=task.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="status" value="In Progress">
                         <div class="mb-3">
                             <label class="form-label fw-bold small">New Status</label>

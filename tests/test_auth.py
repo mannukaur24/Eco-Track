@@ -133,7 +133,7 @@ def test_login_redirect_rejects_external_url(client):
     )
     assert response.status_code == 302
     assert "example.com" not in response.location
-    assert response.location.endswith("/")
+    assert response.location.endswith("/dashboard")
 
 
 def test_login_redirect_rejects_protocol_relative_url(client):
@@ -146,7 +146,7 @@ def test_login_redirect_rejects_protocol_relative_url(client):
     )
     assert response.status_code == 302
     assert "example.com" not in response.location
-    assert response.location.endswith("/")
+    assert response.location.endswith("/dashboard")
 
 
 def test_profile_requires_login(client):
